@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CatPose Edge</title>
+  <style>
+    :root { --bg: #111418; --panel: #1a1f26; --text: #e6e8eb; --muted: #8a93a0; --ok: #10b981; --warn: #f59e0b; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system, system-ui, sans-serif; }
+    main { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; padding: 16px; max-width: 1200px; margin: 0 auto; }
+    @media (max-width: 800px) { main { grid-template-columns: 1fr; } }
+    h1 { font-size: 18px; margin: 0 0 12px; }
+    img { width: 100%; border-radius: 8px; background: #000; display: block; }
+    .panel { background: var(--panel); border-radius: 8px; padding: 14px; }
+    .big { font-size: 28px; font-weight: 600; }
+    .muted { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+    .row { display: flex; justify-content: space-between; gap: 8px; }
+    table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 12px; }
+    td { padding: 2px 0; } td:not(:first-child) { text-align: right; }
+    .dim { color: #5a626d; }
+  </style>
+</head>
+<body>
+  <main>
+    <section>
+      <h1>🐱 CatPose Edge · UNO Q</h1>
+      <img src="/stream" alt="camera stream with landmarks" />
+    </section>
+    <aside class="panel">
+      <div class="muted">检测</div>
+      <div class="row"><span id="cat" class="big">—</span><span id="conf" class="big">—</span></div>
+      <div class="muted" style="margin-top:12px">耗时 (ms)</div>
+      <div id="ms">—</div>
+      <div class="muted" style="margin-top:12px">猫脸点 / 舵机</div>
+      <div id="extra">—</div>
+      <div class="muted" style="margin-top:12px">身体关键点</div>
+      <table id="body"></table>
+    </aside>
+  </main>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    async function tick() {
+      try {
+        const s = await (await fetch("/status")).json();
+        $("cat").textContent = s.cat ? (s.stale ? "猫（保持）" : "猫") : "没有猫";
+        $("cat").style.color = s.cat ? (s.stale ? "var(--warn)" : "var(--ok)") : "var(--muted)";
+        $("conf").textContent = s.confidence != null ? Math.round(s.confidence * 100) + "%" : "—";
+        $("ms").textContent = s.ms ? Object.entries(s.ms).map(([k, v]) => `${k} ${v}`).join(" · ") : "—";
+        $("extra").textContent = `${s.face_points ?? 0} / 48 · ${s.wagging ? "摇摆中" : "回中"}`;
+        $("body").innerHTML = (s.body || []).map(p =>
+          `<tr class="${p.conf < 0.25 ? "dim" : ""}"><td>${p.name}</td><td>${p.x}</td><td>${p.y}</td><td>${Math.round(p.conf * 100)}%</td></tr>`
+        ).join("");
+      } catch (e) { /* board restarting */ }
+      setTimeout(tick, 300);
+    }
+    tick();
+  </script>
+</body>
+</html>

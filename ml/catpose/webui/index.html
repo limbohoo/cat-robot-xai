@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CatPose · live inference</title>
+<style>
+  :root {
+    --bg: #0f1116;
+    --panel: #171923;
+    --panel-2: #1f2230;
+    --text: #e5e7eb;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --face: #ef4444;
+    --body: #f59e0b;
+    --box: #10b981;
+    --border: #262b3a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif; }
+  header {
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  }
+  header h1 { font-size: 16px; font-weight: 500; margin: 0; }
+  header .health { color: var(--muted); font-size: 12px; }
+  main {
+    display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr);
+    gap: 16px; padding: 16px; max-width: 1400px; margin: 0 auto;
+  }
+  @media (max-width: 780px) { main { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px;
+  }
+  .stage {
+    position: relative; background: #000; border-radius: 10px; overflow: hidden;
+    aspect-ratio: 4 / 3;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .stage video, .stage img, .stage canvas {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain;
+  }
+  .stage .placeholder { color: var(--muted); text-align: center; padding: 20px; }
+  .controls { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  button {
+    background: var(--accent); color: #0f1116; border: 0; border-radius: 8px;
+    padding: 8px 14px; font-weight: 500; cursor: pointer; font-size: 13px;
+  }
+  button.secondary { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  select, input[type=range] { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; font-size: 13px; }
+  label { color: var(--muted); font-size: 12px; }
+  .status {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted);
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .dot.on { background: #10b981; }
+  .dot.err { background: #ef4444; }
+
+  .metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+  .metric { background: var(--panel-2); border-radius: 8px; padding: 10px; }
+  .metric .k { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .metric .v { font-size: 18px; font-weight: 500; margin-top: 2px; }
+  .metric .v small { font-size: 11px; color: var(--muted); margin-left: 4px; font-weight: 400; }
+
+  .legend { display: flex; gap: 12px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+  .legend .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+  .legend .face { background: var(--face); }
+  .legend .body { background: var(--body); }
+  .legend .box { background: var(--box); border: 1px dashed rgba(16,185,129,0.6); }
+
+  h2 { font-size: 13px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 14px 0 8px; }
+
+  .kv { display: grid; grid-template-columns: 120px 1fr; gap: 4px 12px; font-size: 12px; }
+  .kv .k { color: var(--muted); }
+  .kv .v { font-family: ui-monospace, "SF Mono", Menlo, monospace; overflow-wrap: anywhere; }
+
+  details { border-top: 1px solid var(--border); margin-top: 10px; padding-top: 8px; }
+  details > summary { cursor: pointer; font-size: 12px; color: var(--muted); user-select: none; }
+  details table { width: 100%; margin-top: 8px; font-family: ui-monospace, monospace; font-size: 11px; border-collapse: collapse; }
+  details table th, details table td { padding: 3px 6px; text-align: left; border-bottom: 1px solid var(--border); }
+  details table th { color: var(--muted); font-weight: 400; }
+  .footer-note { color: var(--muted); font-size: 11px; padding: 10px 20px 20px; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <h1>CatPose · live face + body landmarks</h1>
+  <div class="health">
+    <span class="status"><span class="dot" id="dot-face"></span>face</span>
+    &nbsp;<span class="status"><span class="dot" id="dot-body"></span>body</span>
+    &nbsp;<span class="status"><span class="dot" id="dot-det"></span>YOLO</span>
+  </div>
+</header>
+
+<main>
+  <section class="card">
+    <div class="stage" id="stage">
+      <video id="video" autoplay playsinline muted></video>
+      <img id="overlay" alt="" style="display:none" />
+      <div class="placeholder" id="placeholder">Click “Start camera” below.</div>
+    </div>
+    <div class="controls">
+      <button id="btn-start">Start camera</button>
+      <button id="btn-stop" class="secondary" disabled>Stop</button>
+      <select id="cam-select" class="secondary" title="Camera"></select>
+      <label>Target <span id="fps-label">3</span> FPS
+        <input type="range" id="fps-slider" min="1" max="10" value="3" style="vertical-align: middle; width: 100px;" />
+      </label>
+      <label style="display:inline-flex;align-items:center;gap:6px">
+        <input type="checkbox" id="show-video" checked /> Show raw video
+      </label>
+    </div>
+    <div class="legend" style="margin-top: 10px;">
+      <span><span class="swatch box"></span>YOLO cat box</span>
+      <span><span class="swatch face"></span>Face 48 landmarks</span>
+      <span><span class="swatch body"></span>Body 20 keypoints + skeleton</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="metrics">
+      <div class="metric"><div class="k">Detected class</div><div class="v" id="m-label">—</div></div>
+      <div class="metric"><div class="k">Confidence</div><div class="v" id="m-conf">—</div></div>
+      <div class="metric"><div class="k">End-to-end latency</div><div class="v" id="m-latency">— <small>ms</small></div></div>
+      <div class="metric"><div class="k">Actual FPS</div><div class="v" id="m-fps">— <small>hz</small></div></div>
+    </div>
+
+    <h2>Detection</h2>
+    <div class="kv">
+      <div class="k">bbox (px)</div><div class="v" id="m-bbox">—</div>
+      <div class="k">Face shown</div><div class="v" id="m-face-count">—</div>
+      <div class="k">Body shown</div><div class="v" id="m-body-count">—</div>
+      <div class="k">Frame size</div><div class="v" id="m-size">—</div>
+    </div>
+
+    <h2>Server timing</h2>
+    <div class="kv">
+      <div class="k">YOLO detect</div><div class="v" id="m-t-det">—</div>
+      <div class="k">Landmark models</div><div class="v" id="m-t-kp">—</div>
+    </div>
+
+    <details>
+      <summary>Expand: face keypoints (original-image pixels)</summary>
+      <table><thead><tr><th>#</th><th>x</th><th>y</th><th>conf</th></tr></thead>
+      <tbody id="tb-face"></tbody></table>
+    </details>
+
+    <details>
+      <summary>Expand: body keypoints + names</summary>
+      <table><thead><tr><th>#</th><th>name</th><th>x</th><th>y</th><th>conf</th></tr></thead>
+      <tbody id="tb-body"></tbody></table>
+    </details>
+
+    <details>
+      <summary>Raw JSON response</summary>
+      <pre id="raw-json" style="font-size:11px; overflow:auto; max-height:220px; margin-top:8px;"></pre>
+    </details>
+  </section>
+</main>
+
+<div class="footer-note">
+  Tip: if the browser blocks camera access, grant permission in System Settings → Privacy &amp; Security → Camera, then reload.
+</div>
+
+<script>
+const bodyNames = [
+  "left_eye","right_eye","nose","left_ear","right_ear",
+  "left_front_elbow","right_front_elbow","left_back_elbow","right_back_elbow",
+  "left_front_knee","right_front_knee","left_back_knee","right_back_knee",
+  "left_front_paw","right_front_paw","left_back_paw","right_back_paw",
+  "throat","withers","tailbase",
+];
+
+const videoEl = document.getElementById("video");
+const overlayEl = document.getElementById("overlay");
+const placeholder = document.getElementById("placeholder");
+const btnStart = document.getElementById("btn-start");
+const btnStop = document.getElementById("btn-stop");
+const camSelect = document.getElementById("cam-select");
+const fpsSlider = document.getElementById("fps-slider");
+const fpsLabel = document.getElementById("fps-label");
+const showVideoBox = document.getElementById("show-video");
+
+let stream = null;
+let running = false;
+let lastCaptureTime = 0;
+let inflight = false;
+let fpsCounter = { count: 0, last: performance.now() };
+
+async function refreshHealth() {
+  try {
+    const r = await fetch("/health");
+    const j = await r.json();
+    document.getElementById("dot-face").className = "dot " + (j.face_loaded ? "on" : "err");
+    document.getElementById("dot-body").className = "dot " + (j.body_loaded ? "on" : "err");
+    document.getElementById("dot-det").className = "dot " + (j.detector_loaded ? "on" : "err");
+  } catch (e) {
+    document.getElementById("dot-face").className = "dot err";
+    document.getElementById("dot-body").className = "dot err";
+    document.getElementById("dot-det").className = "dot err";
+  }
+}
+refreshHealth();
+
+async function listCams() {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    camSelect.innerHTML = "";
+    devices.filter(d => d.kind === "videoinput").forEach((d, i) => {
+      const opt = document.createElement("option");
+      opt.value = d.deviceId;
+      opt.textContent = d.label || `Camera ${i + 1}`;
+      camSelect.appendChild(opt);
+    });
+  } catch (e) { /* ignore */ }
+}
+
+btnStart.addEventListener("click", async () => {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: camSelect.value ? { deviceId: { exact: camSelect.value } } : { width: 640, height: 480 },
+      audio: false,
+    });
+    videoEl.srcObject = stream;
+    placeholder.style.display = "none";
+    running = true;
+    btnStart.disabled = true;
+    btnStop.disabled = false;
+    await listCams();
+    loop();
+  } catch (e) {
+    placeholder.textContent = "Camera unavailable: " + e.message;
+  }
+});
+
+btnStop.addEventListener("click", () => {
+  running = false;
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  videoEl.srcObject = null;
+  btnStart.disabled = false;
+  btnStop.disabled = true;
+});
+
+fpsSlider.addEventListener("input", () => {
+  fpsLabel.textContent = fpsSlider.value;
+});
+
+showVideoBox.addEventListener("change", () => {
+  videoEl.style.opacity = showVideoBox.checked ? "1" : "0";
+});
+
+async function captureAndPost() {
+  if (!videoEl.videoWidth) return null;
+  const c = document.createElement("canvas");
+  const targetW = 480;
+  const scale = targetW / videoEl.videoWidth;
+  c.width = targetW;
+  c.height = Math.round(videoEl.videoHeight * scale);
+  c.getContext("2d").drawImage(videoEl, 0, 0, c.width, c.height);
+  const blob = await new Promise(res => c.toBlob(res, "image/jpeg", 0.85));
+  const t0 = performance.now();
+  const form = new FormData();
+  form.append("image", blob, "frame.jpg");
+  const resp = await fetch("/predict/auto/image?include_data=true", { method: "POST", body: form });
+  const json = await resp.json();
+  json._client_latency_ms = performance.now() - t0;
+  return json;
+}
+
+function fmtPct(v) { return (v * 100).toFixed(1) + "%"; }
+
+function updateUI(data) {
+  const det = data.detected;
+  document.getElementById("m-label").textContent = det ? det.label : "none (using whole frame)";
+  document.getElementById("m-conf").textContent = det ? fmtPct(det.confidence) : "—";
+  document.getElementById("m-bbox").textContent = det ? `[${det.bbox.map(v => v.toFixed(0)).join(", ")}]` : "—";
+  const shown = (p, total) => !p ? `0 / ${total}` :
+    (p.confidences ? `${p.num_confident} / ${total}  (mean conf ${Math.round(100 * p.confidences.reduce((a, b) => a + b, 0) / p.confidences.length)}%)` : `${total} / ${total}`);
+  document.getElementById("m-face-count").textContent = shown(data.face, 48);
+  document.getElementById("m-body-count").textContent = shown(data.body, 20);
+  document.getElementById("m-size").textContent = `${data.image_size.width} × ${data.image_size.height}`;
+  document.getElementById("m-latency").innerHTML = `${data._client_latency_ms.toFixed(0)} <small>ms (server ${data.timing_ms.total} ms)</small>`;
+  document.getElementById("m-t-det").textContent = `${data.timing_ms.detector} ms`;
+  document.getElementById("m-t-kp").textContent = `${data.timing_ms.landmarks} ms`;
+
+  const confCell = (p, i) => p.confidences ? `${Math.round(100 * p.confidences[i])}%` : "-";
+  const tbF = document.getElementById("tb-face");
+  tbF.innerHTML = !data.face ? "" : data.face.landmarks.map(([x, y], i) =>
+    `<tr><td>${i + 1}</td><td>${x.toFixed(1)}</td><td>${y.toFixed(1)}</td><td>${confCell(data.face, i)}</td></tr>`
+  ).join("");
+  const tbB = document.getElementById("tb-body");
+  tbB.innerHTML = !data.body ? "" : data.body.landmarks.map(([x, y], i) =>
+    `<tr><td>${i + 1}</td><td>${bodyNames[i] || ""}</td><td>${x.toFixed(1)}</td><td>${y.toFixed(1)}</td><td>${confCell(data.body, i)}</td></tr>`
+  ).join("");
+
+  const rawCopy = Object.assign({}, data);
+  delete rawCopy.overlay_png_base64;
+  document.getElementById("raw-json").textContent = JSON.stringify(rawCopy, null, 2);
+
+  if (data.overlay_png_base64) {
+    overlayEl.src = `data:${data.overlay_mime};base64,${data.overlay_png_base64}`;
+    overlayEl.style.display = "block";
+  }
+}
+
+async function loop() {
+  while (running) {
+    const targetFps = parseInt(fpsSlider.value, 10);
+    const interval = 1000 / targetFps;
+    const now = performance.now();
+    if (!inflight && now - lastCaptureTime >= interval) {
+      lastCaptureTime = now;
+      inflight = true;
+      try {
+        const data = await captureAndPost();
+        if (data) {
+          updateUI(data);
+          fpsCounter.count += 1;
+          if (now - fpsCounter.last >= 1000) {
+            document.getElementById("m-fps").innerHTML =
+              `${fpsCounter.count} <small>hz</small>`;
+            fpsCounter.count = 0;
+            fpsCounter.last = now;
+          }
+        }
+      } catch (e) {
+        console.warn(e);
+      }
+      inflight = false;
+    }
+    await new Promise(r => setTimeout(r, 20));
+  }
+}
+
+listCams();
+</script>
+</body>
+</html>

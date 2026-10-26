@@ -1,0 +1,5 @@
+name: Servo PIR Test
+icon: 🧪
+description: SG90 servo sweep + PIR motion sensor test for the UNO Q.
+ports: []
+bricks: []

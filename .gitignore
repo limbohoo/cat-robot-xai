@@ -1,0 +1,14 @@
+.DS_Store
+__pycache__/
+*.pyc
+ml/.venv/
+ml/datasets/
+ml/checkpoints/exp/
+sessions/
+reports/
+*.mp4
+*.mov
+*.MOV
+*.MP4
+ml/checkpoints/yolov8*.pt
+hardware/unoq/catpose-edge/python/models/yolo.onnx

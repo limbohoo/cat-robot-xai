@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f3f4f6">
+<title>猫咪日记</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+/* Layout: one phone-sized column (a framed device on wide screens, full bleed on phones);
+   a fixed tab bar; screens swap in place, the moment detail pushes over them. */
+:root {
+  --desk: #e6e8ec;
+  --bg: #f3f4f6;
+  --card: #ffffff;
+  --ink: #1b1f27;
+  --muted: #626977;
+  --line: #e2e5ea;
+  --soft: #eef0f3;
+  --accent: #2f4fb3;
+  --accent-ink: #ffffff;
+  --warn-bg: #fdf1dc;
+  --warn-ink: #7a4a07;
+  --ok: #2f6fd6;
+  --no: #c2410c;
+  --font: "Noto Sans SC", -apple-system, "PingFang SC", "Hiragino Sans GB", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --desk: #0c0e12; --bg: #15181e; --card: #1e222a; --ink: #e9ebf0; --muted: #a2a8b5; --line: #2d323c;
+    --soft: #262b34; --accent: #8ea6f2; --accent-ink: #10131a; --warn-bg: #3a2c12; --warn-ink: #f3cf8f;
+    --ok: #8eb4f5; --no: #f2a07a; color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--desk); color: var(--ink); font: 16px/1.55 var(--font);
+       display: flex; justify-content: center; align-items: center; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2.5px solid var(--accent); outline-offset: 2px; }
+
+.phone { position: relative; width: 100%; max-width: 420px; height: 100%; background: var(--bg);
+         display: flex; flex-direction: column; overflow: hidden; }
+@media (min-width: 560px) and (min-height: 760px) {
+  .phone { height: min(880px, calc(100% - 48px)); border-radius: 38px;
+           box-shadow: 0 0 0 10px #1b1f27, 0 24px 60px rgba(0,0,0,.25); }
+}
+.screen { flex: 1; overflow-y: auto; padding: calc(18px + env(safe-area-inset-top, 0px)) 16px 96px;
+          display: flex; flex-direction: column; gap: 14px; }
+.screen[hidden] { display: none; }
+
+/* header */
+.top { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.top h1 { font-size: 26px; margin: 0; line-height: 1.2; text-wrap: balance; }
+.top .when { color: var(--muted); font-size: 13.5px; margin: 0 0 2px; }
+.cat { width: 42px; height: 42px; border-radius: 50%; background: var(--soft); display: grid; place-items: center;
+       font-weight: 700; color: var(--accent); flex: none; }
+
+.lead { font-size: 18.5px; font-weight: 600; line-height: 1.5; margin: 0; text-wrap: pretty; }
+.card { background: var(--card); border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.card h2 { font-size: 15px; margin: 0; color: var(--muted); font-weight: 500; }
+.card p { margin: 0; }
+.alert { background: var(--warn-bg); color: var(--warn-ink); border-radius: 14px; padding: 10px 14px; font-size: 14.5px; margin: 0; }
+
+.bar { display: flex; height: 14px; border-radius: 7px; overflow: hidden; gap: 2px; }
+.legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13.5px; color: var(--muted); }
+.legend i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 5px; }
+.legend b { color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+.rounds { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+.round { background: var(--soft); border-radius: 12px; padding: 8px 10px; display: flex; flex-direction: column; min-width: 0; }
+.round span { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.round b { font-size: 16px; }
+.round.ok b { color: var(--ok); } .round.no b { color: var(--no); }
+.round small { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.sec { display: flex; justify-content: space-between; align-items: baseline; margin: 6px 2px -4px; }
+.sec h3 { font-size: 17px; margin: 0; }
+.sec a, .link { color: var(--accent); font-size: 14px; text-decoration: none; background: none; border: 0; cursor: pointer; padding: 0; }
+
+/* moment rows */
+.mrow { display: flex; gap: 12px; align-items: center; background: var(--card); border-radius: 16px; padding: 10px;
+        border: 0; text-align: left; cursor: pointer; width: 100%; }
+.mrow img { width: 92px; height: 64px; object-fit: cover; border-radius: 11px; flex: none; background: var(--soft); }
+.mrow .m { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.mrow .t { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.mrow .g { font-size: 16.5px; font-weight: 700; color: var(--c); }
+.mrow.low .g { color: var(--muted); font-weight: 500; }
+.chip { align-self: flex-start; font-size: 11.5px; border: 1.5px solid var(--c); color: var(--c); border-radius: 999px; padding: 0 8px; }
+.chip.muted { border-color: var(--line); color: var(--muted); }
+.done { font-size: 12px; color: var(--muted); }
+.chev { color: var(--muted); font-size: 22px; flex: none; }
+
+.filters { display: flex; gap: 8px; overflow-x: auto; }
+.filters button { border: 1.5px solid var(--line); background: var(--card); border-radius: 999px; padding: 4px 14px;
+                  font-size: 14px; cursor: pointer; white-space: nowrap; }
+.filters button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.timeline { display: flex; flex-direction: column; gap: 8px; }
+
+/* history */
+.hrow { display: flex; flex-direction: column; gap: 8px; background: var(--card); border-radius: 18px; padding: 12px;
+        border: 2px solid transparent; text-align: left; cursor: pointer; width: 100%; }
+.hrow[aria-current="true"] { border-color: var(--accent); }
+.hrow .h { display: flex; gap: 12px; align-items: center; }
+.hrow img { width: 64px; height: 64px; object-fit: cover; border-radius: 12px; background: var(--soft); flex: none; }
+.hrow b { font-size: 16px; display: block; }
+.hrow small { color: var(--muted); font-size: 13px; }
+.hrow p { margin: 0; font-size: 14px; color: var(--muted); }
+
+/* detail */
+.detail { position: absolute; inset: 0; background: var(--bg); z-index: 5; overflow-y: auto;
+          padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 40px; display: flex; flex-direction: column; gap: 14px;
+          transform: translateX(100%); transition: transform .24s ease; visibility: hidden; }
+.detail.open { transform: none; visibility: visible; }
+.detail:focus { outline: none; }
+@media (prefers-reduced-motion: reduce) { .detail { transition: none; } }
+.back { align-self: flex-start; border: 0; background: none; color: var(--accent); font-size: 16px; cursor: pointer; padding: 6px 0; }
+video { width: 100%; border-radius: 16px; background: #000; display: block; aspect-ratio: 16 / 9; }
+.guess { display: flex; flex-direction: column; gap: 6px; }
+.guess .big { font-size: 25px; font-weight: 700; color: var(--c); margin: 0; line-height: 1.25; }
+.guess p { margin: 0; }
+.muted { color: var(--muted); }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { background: var(--soft); border-radius: 10px; padding: 4px 10px; font-size: 14.5px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pair figure { margin: 0; } .pair img { width: 100%; border-radius: 12px; display: block; }
+.pair figcaption { font-size: 12px; color: var(--muted); margin-top: 3px; }
+details.why summary { cursor: pointer; color: var(--muted); font-size: 15px; }
+details.why ol { margin: 8px 0 0; padding-left: 20px; font-size: 15px; }
+.note { font-size: 14px; color: var(--muted); margin: 0; }
+.basis .bl { display: flex; align-items: baseline; gap: 8px; font-size: 16px; }
+.role { flex: none; font-size: 11.5px; border-radius: 6px; padding: 1px 7px; border: 1.5px solid var(--line); color: var(--muted); }
+.role.main { border-color: var(--ink); color: var(--ink); font-weight: 700; }
+.if { font-size: 14.5px; color: var(--ink); }
+.key { font-size: 14.5px; color: var(--ink); font-weight: 500; }
+.fine.bad { color: var(--no); }
+
+.fb { display: flex; flex-direction: column; gap: 10px; }
+.fb h3 { font-size: 16px; margin: 0; }
+.seg { display: flex; gap: 8px; }
+.seg button, .states button { flex: 1; border: 1.5px solid var(--line); background: var(--card); border-radius: 12px;
+                              padding: 9px 4px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.states { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.states button[aria-pressed="true"] { border-color: var(--c); background: var(--c); color: #fff; }
+.fb input { width: 100%; border: 1.5px solid var(--line); background: var(--card); border-radius: 12px; padding: 10px 12px; font: inherit; color: var(--ink); }
+.save { border: 0; background: var(--ink); color: var(--bg); border-radius: 14px; padding: 12px; font-weight: 700; cursor: pointer; }
+.save:disabled { opacity: .4; cursor: default; }
+.fine { font-size: 12.5px; color: var(--muted); margin: 0; }
+
+/* tab bar */
+.tabs { position: absolute; left: 0; right: 0; bottom: 0; display: flex; background: var(--card);
+        border-top: 1px solid var(--line); padding: 6px 8px calc(8px + env(safe-area-inset-bottom, 0px)); z-index: 4; }
+.tabs button { flex: 1; border: 0; background: none; padding: 6px 0; cursor: pointer; color: var(--muted);
+               display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: 12px; }
+.tabs svg { width: 22px; height: 22px; }
+.tabs button[aria-current="page"] { color: var(--accent); }
+.toast { position: absolute; left: 50%; bottom: 92px; transform: translateX(-50%); background: var(--ink); color: var(--bg);
+         padding: 8px 16px; border-radius: 999px; font-size: 14px; z-index: 9; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.toast.show { opacity: 1; }
+.empty { color: var(--muted); text-align: center; padding: 40px 12px; }
+.foot { font-size: 12.5px; color: var(--muted); margin: 6px 2px 0; }
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+
+  <section class="screen" id="home" aria-label="今天">
+    <div class="empty">正在读取报告……</div>
+  </section>
+
+  <section class="screen" id="moments" aria-label="时刻" hidden></section>
+
+  <section class="screen" id="history" aria-label="记录" hidden></section>
+
+  <article class="detail" id="detail" aria-label="时刻详情" aria-hidden="true" tabindex="-1"></article>
+
+  <nav class="tabs" aria-label="主导航">
+    <button data-tab="home" aria-current="page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5h-5v5H5a1 1 0 0 1-1-1z"/></svg>今天</button>
+    <button data-tab="moments">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2.5"/><path d="m10.5 9.5 4 2.5-4 2.5z" fill="currentColor"/></svg>时刻</button>
+    <button data-tab="history">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></svg>记录</button>
+  </nav>
+  <div class="toast" id="toast" role="status"></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var state = { list: [], report: null, id: null, filter: "all", detail: null };
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
+  var media = function (p) { return p ? "/media/" + state.id + "/" + p.split("/").map(encodeURIComponent).join("/") : ""; };
+  var STATE_KEYS = ["tense", "curious", "playful", "attentive", "calm"];
+
+  function toast(msg) {
+    var t = $("toast"); t.textContent = msg; t.classList.add("show");
+    clearTimeout(toast.timer); toast.timer = setTimeout(function () { t.classList.remove("show"); }, 1800);
+  }
+
+  function api(path, opts) {
+    return fetch(path, opts).then(function (r) {
+      if (!r.ok) throw new Error(r.status + " " + r.statusText);
+      return r.json();
+    });
+  }
+
+  // ---------- tabs ----------
+  function showTab(name) {
+    ["home", "moments", "history"].forEach(function (n) { $(n).hidden = n !== name; });
+    document.querySelectorAll(".tabs button").forEach(function (b) {
+      if (b.dataset.tab === name) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+    });
+    closeDetail();
+  }
+  document.querySelectorAll(".tabs button").forEach(function (b) {
+    b.addEventListener("click", function () { showTab(b.dataset.tab); });
+  });
+
+  // ---------- pieces ----------
+  function badge(m) {
+    return m.show ? '<span class="chip">推测 · 把握' + esc(m.band) + "</span>"
+                  : '<span class="chip muted">把握不够，不做推测</span>';
+  }
+  function fbText(m) {
+    var f = (state.report.feedback || {})[m.id];
+    if (!f) return "";
+    var t = { right: "你说：对", wrong: "你说：不对", unsure: "你说：说不准", label: "你已标注" }[f.verdict] || "";
+    return '<span class="done">✓ ' + t + "</span>";
+  }
+  function row(m) {
+    var title = m.show ? "看起来像：" + m.guess_text : m.reaction_text;
+    return '<button class="mrow' + (m.show ? "" : " low") + '" style="--c:' + esc(m.color) + '" data-m="' + m.id + '">' +
+      '<img src="' + media(m.after_img) + '" alt="" loading="lazy">' +
+      '<span class="m"><span class="t">' + esc(m.time) + (m.camera ? " · " + esc(m.camera) : "") + '</span>' +
+      '<span class="g">' + esc(title) + "</span>" + badge(m) + fbText(m) + "</span>" +
+      '<span class="chev" aria-hidden="true">›</span></button>';
+  }
+  function bindRows(root) {
+    root.querySelectorAll(".mrow").forEach(function (b) {
+      b.addEventListener("click", function () { openDetail(+b.dataset.m); });
+    });
+  }
+
+  // ---------- home ----------
+  function renderHome() {
+    var r = state.report, el = $("home");
+    var shown = r.moments.filter(function (m) { return m.show; });
+    var low = r.moments.length - shown.length;
+    var bar = r.budget.map(function (b) { return '<span style="flex:' + b.share + ";background:" + b.color + '"></span>'; }).join("");
+    var legend = r.budget.map(function (b) {
+      return '<li><i style="background:' + b.color + '"></i>' + esc(b.label) + " <b>" + Math.round(b.share * 100) + "%</b></li>"; }).join("");
+    var rounds = r.rounds.length ? '<div class="card"><h2>小车邀请它玩的时候</h2><div class="rounds">' + r.rounds.map(function (x) {
+      return '<div class="round ' + x.kind + '"><span>' + esc(x.time) + "</span><b>" + esc(x.response) + "</b><small>" + esc(x.action) + "</small></div>";
+    }).join("") + "</div>" + (r.stops.length ? '<p class="fine">小车按安全规则停下 ' + r.stops.length + " 次。</p>" : "") + "</div>" : "";
+    el.innerHTML =
+      '<header class="top"><div><p class="when">' + esc(r.period) + " · " + esc(r.source) + '</p><h1>你不在的时候</h1></div>' +
+      '<div class="cat" aria-hidden="true">🐾</div></header>' +
+      r.alerts.map(function (a) { return '<p class="alert">' + esc(a) + "</p>"; }).join("") +
+      '<p class="lead">' + esc(r.summary) + "</p>" +
+      (r.budget.length ? '<div class="card"><h2>它的时间都花在哪里</h2><div class="bar">' + bar + '</div><ul class="legend">' + legend + "</ul></div>" : "") +
+      rounds +
+      '<div class="sec"><h3>值得看的时刻</h3>' + (r.moments.length ? '<button class="link" data-go="moments">全部 ' + r.moments.length + " 个</button>" : "") + "</div>" +
+      (shown.length ? shown.map(row).join("") : '<p class="empty">这段时间没有把握足够高的推测。</p>') +
+      (low ? '<p class="foot">另有 ' + low + " 个时刻把握不够，没有给推测，在「时刻」里可以看到。</p>" : "") +
+      '<p class="foot">“看起来像”是根据看得见的动作做的推测，会随它随后的行为更新，不是诊断。点开视频，用你对它的了解来判断。</p>';
+    bindRows(el);
+    var go = el.querySelector("[data-go]");
+    if (go) go.addEventListener("click", function () { showTab("moments"); });
+  }
+
+  // ---------- moments ----------
+  function renderMoments() {
+    var r = state.report, el = $("moments"), fb = r.feedback || {};
+    var filters = [["all", "全部"], ["shown", "有推测"], ["todo", "还没反馈"]];
+    var list = r.moments.filter(function (m) {
+      return state.filter === "all" || (state.filter === "shown" ? m.show : !fb[m.id]); });
+    el.innerHTML = '<header class="top"><div><p class="when">' + esc(r.period) + '</p><h1>时刻</h1></div></header>' +
+      '<div class="filters" role="group" aria-label="筛选">' + filters.map(function (f) {
+        return '<button data-f="' + f[0] + '" aria-pressed="' + (state.filter === f[0]) + '">' + f[1] + "</button>"; }).join("") + "</div>" +
+      '<div class="timeline">' + (list.length ? list.map(row).join("") : '<p class="empty">没有符合的时刻。</p>') + "</div>" +
+      '<p class="foot">已反馈 ' + Object.keys(fb).length + " / " + r.moments.length + " 个。你的反馈会帮助系统改进推测。</p>";
+    el.querySelectorAll("[data-f]").forEach(function (b) {
+      b.addEventListener("click", function () { state.filter = b.dataset.f; renderMoments(); }); });
+    bindRows(el);
+  }
+
+  // ---------- history ----------
+  function renderHistory() {
+    var el = $("history");
+    el.innerHTML = '<header class="top"><div><p class="when">共 ' + state.list.length + ' 次</p><h1>记录</h1></div></header>' +
+      state.list.map(function (x) {
+        return '<button class="hrow" data-id="' + x.id + '"' + (x.id === state.id ? ' aria-current="true"' : "") + '>' +
+          '<span class="h"><img src="' + (x.cover ? "/media/" + x.id + "/" + x.cover : "") + '" alt="" loading="lazy">' +
+          "<span><b>" + esc(x.title) + "</b><small>" + esc(x.period) + " · " + x.n_moments + " 个时刻" +
+          (x.n_feedback ? " · 已反馈 " + x.n_feedback : "") + (x.n_alerts ? " · ⚠ " + x.n_alerts : "") + "</small></span></span>" +
+          "<p>" + esc(x.summary) + "</p></button>";
+      }).join("") +
+      (state.id ? '<a class="link" href="/api/reports/' + state.id + '/labels.csv">下载这次的反馈（标注 CSV）</a>' : "") +
+      '<p class="foot">报告和反馈保存在运行分析的那台电脑上。</p>';
+    el.querySelectorAll(".hrow").forEach(function (b) {
+      b.addEventListener("click", function () { load(b.dataset.id).then(function () { showTab("home"); }); }); });
+  }
+
+  // ---------- detail ----------
+  function openDetail(i) {
+    var r = state.report, m = r.moments[i], fb = (r.feedback || {})[i] || {};
+    state.detail = { id: i, verdict: fb.verdict || "", actual: fb.actual || "" };
+    var d = $("detail");
+    d.style.setProperty("--c", m.color);
+    var title = m.show ? "看起来像：" + m.guess_text : m.reaction_text;
+    var alts = m.alt_views.map(function (a) {
+      return '<details class="why"><summary>换个角度看（' + esc(a.name) + '）</summary><video controls playsinline preload="none" src="' + media(a.clip) + '"></video></details>'; }).join("");
+    var stateBtns = STATE_KEYS.map(function (k) {
+      var s = r.states[k] || { text: k, color: "#64748b" };
+      return '<button data-s="' + k + '" style="--c:' + s.color + '" aria-pressed="false">' + esc(s.short || s.text.split(" / ")[0]) + "</button>"; }).join("");
+    d.innerHTML =
+      '<button class="back" id="back">‹ 返回</button>' +
+      '<video controls playsinline preload="metadata" poster="' + media(m.after_img) + '" src="' + media(m.clip) + '"></video>' + alts +
+      '<div class="guess"><p class="muted">' + esc(m.time) + (m.camera ? " · " + esc(m.camera) : "") + " · " + esc(m.reaction_text) + "</p>" +
+      '<p class="big">' + esc(title) + "</p>" + badge(m) +
+      (m.show ? "<p>也可能是：<b>" + esc(m.second_text) + "</b></p>" + (m.tell_apart ? '<p class="muted"><b>怎么分辨：</b>' + esc(m.tell_apart) + "</p>" : "") : "") +
+      (m.guess_if || []).map(function (x) { return '<p class="key">' + esc(x) + "</p>"; }).join("") +
+      "</div>" +
+      ((m.basis || []).length ? '<div class="card basis"><h2>为什么标为「' + esc(m.reaction_text) + '」</h2>' +
+        m.basis.map(function (b) {
+          return '<p class="bl"><span class="role ' + b.role + '">' + (b.role === "main" ? "主要依据" : "补充") + "</span>" + esc(b.text) + "</p>";
+        }).join("") +
+        (m.basis_if || []).map(function (x) { return '<p class="if">' + esc(x) + "</p>"; }).join("") +
+        (m.faith_text ? '<p class="fine' + (m.faith_ok === false ? " bad" : "") + '">' + esc(m.faith_text) + "</p>" : "") +
+        "</div>" : "") +
+      (m.changes.length ? '<div class="card"><h2>和 2 秒前相比</h2><div class="tags">' + m.changes.map(function (c) { return '<span class="tag">' + esc(c) + "</span>"; }).join("") + "</div></div>" : "") +
+      (m.before.length ? '<div class="card"><h2>在这之前</h2>' + m.before.map(function (c) { return "<p>" + esc(c) + "</p>"; }).join("") +
+        '<p class="fine">只说明先后顺序，不代表是它引起的。</p></div>' : "") +
+      '<div class="pair"><figure><img src="' + media(m.before_img) + '" alt="变化前"><figcaption>变化前</figcaption></figure>' +
+      '<figure><img src="' + media(m.after_img) + '" alt="变化后' + (m.basis_marked ? "，红圈是判断依据的部位" : "") + '"><figcaption>变化后' + (m.basis_marked ? "（红圈：判断依据的部位）" : "") + "</figcaption></figure></div>" +
+      m.notes.map(function (n) { return '<p class="note">⚠ ' + esc(n) + "</p>"; }).join("") +
+      (m.trail.length ? '<details class="why"><summary>为什么这么推测？</summary><ol>' + m.trail.map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + "</ol></details>" : "") +
+      '<div class="card fb"><h3>' + (m.show ? "这个推测对吗？" : "你觉得它当时怎么了？") + "</h3>" +
+      (m.show ? '<div class="seg" role="group" aria-label="推测对不对"><button data-v="right" aria-pressed="false">对</button>' +
+        '<button data-v="wrong" aria-pressed="false">不对</button><button data-v="unsure" aria-pressed="false">说不准</button></div>' : "") +
+      '<div id="actual"' + (m.show ? " hidden" : "") + '><p class="fine" style="margin-bottom:8px">' + (m.show ? "那它更像是：" : "选一个最像的：") + "</p>" +
+      '<div class="states">' + stateBtns + (m.show ? "" : '<button data-s="" aria-pressed="false">说不准</button>') + "</div></div>" +
+      '<input id="note" type="text" placeholder="想补充什么？（可选）" aria-label="补充说明" value="' + esc(fb.note || "") + '">' +
+      '<button class="save" id="save" disabled>保存反馈</button>' +
+      '<p class="fine">你的回答只保存在这台分析电脑上，用来检验和改进推测。</p></div>';
+    var seg = d.querySelectorAll("[data-v]"), sts = d.querySelectorAll("[data-s]");
+    function sync() {
+      var s = state.detail;
+      seg.forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.v === s.verdict); });
+      sts.forEach(function (b) { b.setAttribute("aria-pressed", s.verdict !== "" && b.dataset.s === s.actual && (s.verdict !== "right")); });
+      if (m.show) $("actual").hidden = s.verdict !== "wrong";
+      $("save").disabled = !s.verdict;
+    }
+    seg.forEach(function (b) { b.addEventListener("click", function () {
+      state.detail.verdict = b.dataset.v; if (b.dataset.v !== "wrong") state.detail.actual = ""; sync(); }); });
+    sts.forEach(function (b) { b.addEventListener("click", function () {
+      state.detail.actual = b.dataset.s;
+      if (!m.show) state.detail.verdict = b.dataset.s ? "label" : "unsure";
+      sync(); }); });
+    $("save").addEventListener("click", function () { saveFeedback(m); });
+    $("back").addEventListener("click", closeDetail);
+    sync();
+    d.classList.add("open"); d.setAttribute("aria-hidden", "false"); d.scrollTop = 0;
+    d.focus({ preventScroll: true });  // screen readers land on the detail; no focus ring on tap
+  }
+  function closeDetail() {
+    var d = $("detail");
+    if (!d.classList.contains("open")) return;
+    d.querySelectorAll("video").forEach(function (v) { v.pause(); });
+    d.classList.remove("open"); d.setAttribute("aria-hidden", "true");
+  }
+  function saveFeedback(m) {
+    var s = state.detail, btn = $("save");
+    btn.disabled = true;
+    api("/api/reports/" + state.id + "/feedback", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ moment: m.id, verdict: s.verdict, actual: s.actual, note: $("note").value })
+    }).then(function (store) {
+      state.report.feedback = store;
+      var item = state.list.find(function (x) { return x.id === state.id; });
+      if (item) item.n_feedback = Object.keys(store).length;
+      toast("已保存，谢谢！");
+      renderHome(); renderMoments(); renderHistory();
+      closeDetail();
+    }).catch(function (err) {
+      btn.disabled = false;
+      toast("没有保存成功：" + err.message + "。请检查分析电脑是否还在运行。");
+    });
+  }
+
+  // ---------- load ----------
+  function load(id) {
+    return api("/api/reports/" + id).then(function (r) {
+      state.report = r; state.id = id; state.filter = "all";
+      try { localStorage.setItem("catapp:last", id); } catch (e) {}
+      renderHome(); renderMoments(); renderHistory();
+    });
+  }
+  api("/api/reports").then(function (list) {
+    state.list = list;
+    if (!list.length) {
+      $("home").innerHTML = '<div class="empty"><b>还没有报告</b><br>先用 catpose.realtime --report-dir 或 catpose.session 分析一段视频，再刷新这一页。</div>';
+      renderHistory(); return;
+    }
+    var last = null;
+    try { last = localStorage.getItem("catapp:last"); } catch (e) {}
+    var want = (location.hash.match(/r=([0-9a-f]+)/) || [])[1];
+    var pick = list.some(function (x) { return x.id === want; }) ? want
+             : list.some(function (x) { return x.id === last; }) ? last : list[0].id;
+    return load(pick).then(route);
+  }).catch(function (err) {
+    $("home").innerHTML = '<div class="empty"><b>连不上分析电脑</b><br>' + esc(err.message) + "<br>请确认 catpose.app 还在运行，手机和电脑在同一个 Wi‑Fi。</div>";
+  });
+  // Deep links: #r=<report id>, then #moments / #history / #moment-<n> (e.g. #r=ab12&moment-4).
+  function route() {
+    var hash = location.hash.slice(1), want = (hash.match(/r=([0-9a-f]+)/) || [])[1];
+    if (want && want !== state.id && state.list.some(function (x) { return x.id === want; })) return load(want).then(route);
+    var mm = hash.match(/moment-(\d+)/);
+    showTab(/history/.test(hash) ? "history" : /moments/.test(hash) ? "moments" : "home");
+    if (mm && state.report && state.report.moments[+mm[1]]) openDetail(+mm[1]);
+  }
+  window.addEventListener("hashchange", function () { if (state.report) route(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeDetail(); });
+})();
+</script>
+</body>
+</html>

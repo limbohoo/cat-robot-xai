@@ -1,0 +1,6 @@
+name: CatPose Edge
+icon: 🐱
+description: Cat detection + face/body landmarks on the UNO Q, streamed to a Web UI; LED matrix shows status, SG90 servo follows the cat.
+ports: []
+bricks:
+  - arduino:web_ui

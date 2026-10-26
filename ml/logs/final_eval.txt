@@ -1,0 +1,10 @@
+face v1 regression                    tta=False  pck@0.05=82.82  pck@0.1=96.05  nme= 3.62%
+face v2 heatmap                       tta=False  pck@0.05=98.95  pck@0.1=99.93  nme= 1.23%
+face v2 heatmap                       tta=True   pck@0.05=99.01  pck@0.1=99.93  nme= 1.21%
+body v1 regression                    tta=False  pck@0.05=10.55  pck@0.1=28.74  nme=24.55%  | part2 pck@0.1=70.74  voc pck@0.1=20.52
+body v2 cat-only                      tta=False  pck@0.05=56.16  pck@0.1=78.47  nme= 8.71%  | part2 pck@0.1=91.85  voc pck@0.1=75.85
+body v2 cat-only                      tta=True   pck@0.05=56.09  pck@0.1=78.41  nme= 8.67%  | part2 pck@0.1=92.59  voc pck@0.1=75.63
+body v2 all-species                   tta=False  pck@0.05=56.28  pck@0.1= 77.5  nme= 8.85%  | part2 pck@0.1=93.33  voc pck@0.1=74.4
+body v2 all-species                   tta=True   pck@0.05=57.49  pck@0.1= 77.8  nme= 8.54%  | part2 pck@0.1=93.33  voc pck@0.1=74.76
+body v2 all-species + cat fine-tune   tta=False  pck@0.05=57.25  pck@0.1=79.26  nme= 8.54%  | part2 pck@0.1=93.33  voc pck@0.1=76.5
+body v2 all-species + cat fine-tune   tta=True   pck@0.05=58.04  pck@0.1=79.38  nme= 8.34%  | part2 pck@0.1=92.96  voc pck@0.1=76.72

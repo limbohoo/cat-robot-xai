@@ -1,0 +1,9 @@
+yolov8n  cpu:   22.9 ms
+yolov8n  mps:    9.1 ms
+yolov8s  cpu:   42.4 ms
+yolov8s  mps:   10.7 ms
+landmarks cpu: body 213.7 ms, face 226.5 ms/pass (both with flip TTA)
+landmarks mps: body 8.0 ms, face 8.7 ms/pass (both with flip TTA)
+pipeline (yolov8n/cpu every 2 frames + body + 2 face passes on mps): 37 ms/frame -> 27.2 FPS
+pipeline (yolov8s/cpu every 2 frames + body + 2 face passes on mps): 47 ms/frame -> 21.5 FPS
+pipeline (yolov8s/mps every 2 frames + body + 2 face passes on mps): 31 ms/frame -> 32.6 FPS

@@ -1,0 +1,2 @@
+v1 head (eyes/nose/ears) 37% (n=673) | elbows 25% (n=215) | knees 19% (n=257) | paws 19% (n=248) | throat/withers/tail 30% (n=256)
+v2 head (eyes/nose/ears) 91% (n=673) | elbows 64% (n=215) | knees 70% (n=257) | paws 71% (n=248) | throat/withers/tail 78% (n=256)

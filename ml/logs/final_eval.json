@@ -1,0 +1,196 @@
+[
+ {
+  "kind": "face",
+  "model": "v1 regression",
+  "tta": false,
+  "all": {
+   "pck@0.05": 82.82,
+   "pck@0.1": 96.05,
+   "nme%": 3.62,
+   "points": 9936
+  }
+ },
+ {
+  "kind": "face",
+  "model": "v2 heatmap",
+  "tta": false,
+  "all": {
+   "pck@0.05": 98.95,
+   "pck@0.1": 99.93,
+   "nme%": 1.23,
+   "points": 9936
+  }
+ },
+ {
+  "kind": "face",
+  "model": "v2 heatmap",
+  "tta": true,
+  "all": {
+   "pck@0.05": 99.01,
+   "pck@0.1": 99.93,
+   "nme%": 1.21,
+   "points": 9936
+  }
+ },
+ {
+  "kind": "body",
+  "model": "v1 regression",
+  "tta": false,
+  "all": {
+   "pck@0.05": 10.55,
+   "pck@0.1": 28.74,
+   "nme%": 24.55,
+   "points": 1649
+  },
+  "part2": {
+   "pck@0.05": 27.78,
+   "pck@0.1": 70.74,
+   "nme%": 10.22,
+   "points": 270
+  },
+  "voc": {
+   "pck@0.05": 7.18,
+   "pck@0.1": 20.52,
+   "nme%": 27.36,
+   "points": 1379
+  }
+ },
+ {
+  "kind": "body",
+  "model": "v2 cat-only",
+  "tta": false,
+  "all": {
+   "pck@0.05": 56.16,
+   "pck@0.1": 78.47,
+   "nme%": 8.71,
+   "points": 1649
+  },
+  "part2": {
+   "pck@0.05": 75.19,
+   "pck@0.1": 91.85,
+   "nme%": 4.86,
+   "points": 270
+  },
+  "voc": {
+   "pck@0.05": 52.43,
+   "pck@0.1": 75.85,
+   "nme%": 9.47,
+   "points": 1379
+  }
+ },
+ {
+  "kind": "body",
+  "model": "v2 cat-only",
+  "tta": true,
+  "all": {
+   "pck@0.05": 56.09,
+   "pck@0.1": 78.41,
+   "nme%": 8.67,
+   "points": 1649
+  },
+  "part2": {
+   "pck@0.05": 75.93,
+   "pck@0.1": 92.59,
+   "nme%": 4.88,
+   "points": 270
+  },
+  "voc": {
+   "pck@0.05": 52.21,
+   "pck@0.1": 75.63,
+   "nme%": 9.41,
+   "points": 1379
+  }
+ },
+ {
+  "kind": "body",
+  "model": "v2 all-species",
+  "tta": false,
+  "all": {
+   "pck@0.05": 56.28,
+   "pck@0.1": 77.5,
+   "nme%": 8.85,
+   "points": 1649
+  },
+  "part2": {
+   "pck@0.05": 73.33,
+   "pck@0.1": 93.33,
+   "nme%": 5.18,
+   "points": 270
+  },
+  "voc": {
+   "pck@0.05": 52.94,
+   "pck@0.1": 74.4,
+   "nme%": 9.57,
+   "points": 1379
+  }
+ },
+ {
+  "kind": "body",
+  "model": "v2 all-species",
+  "tta": true,
+  "all": {
+   "pck@0.05": 57.49,
+   "pck@0.1": 77.8,
+   "nme%": 8.54,
+   "points": 1649
+  },
+  "part2": {
+   "pck@0.05": 74.44,
+   "pck@0.1": 93.33,
+   "nme%": 4.98,
+   "points": 270
+  },
+  "voc": {
+   "pck@0.05": 54.17,
+   "pck@0.1": 74.76,
+   "nme%": 9.24,
+   "points": 1379
+  }
+ },
+ {
+  "kind": "body",
+  "model": "v2 all-species + cat fine-tune",
+  "tta": false,
+  "all": {
+   "pck@0.05": 57.25,
+   "pck@0.1": 79.26,
+   "nme%": 8.54,
+   "points": 1649
+  },
+  "part2": {
+   "pck@0.05": 74.81,
+   "pck@0.1": 93.33,
+   "nme%": 4.9,
+   "points": 270
+  },
+  "voc": {
+   "pck@0.05": 53.81,
+   "pck@0.1": 76.5,
+   "nme%": 9.25,
+   "points": 1379
+  }
+ },
+ {
+  "kind": "body",
+  "model": "v2 all-species + cat fine-tune",
+  "tta": true,
+  "all": {
+   "pck@0.05": 58.04,
+   "pck@0.1": 79.38,
+   "nme%": 8.34,
+   "points": 1649
+  },
+  "part2": {
+   "pck@0.05": 75.19,
+   "pck@0.1": 92.96,
+   "nme%": 4.81,
+   "points": 270
+  },
+  "voc": {
+   "pck@0.05": 54.68,
+   "pck@0.1": 76.72,
+   "nme%": 9.03,
+   "points": 1379
+  }
+ }
+]
